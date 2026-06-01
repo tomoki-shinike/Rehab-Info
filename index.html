@@ -105,11 +105,19 @@
   .link-list-item .ext-icon { margin-left: auto; opacity: .4; }
   .link-list-item svg { width: 14px; height: 14px; flex-shrink: 0; }
 
-  /* ── ABOUT SVG SECTION ── */
+  /* ── ABOUT SVG SECTION (アコーディオン) ── */
   .about-wrap { max-width: 1100px; margin: 4px auto 20px; padding: 0 24px; }
-  .about-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm); }
-  .about-card h2 { font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-  .about-card h2 svg { width: 16px; height: 16px; fill: var(--blue); flex-shrink: 0; }
+  .about-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+  .about-toggle { width: 100%; display: flex; align-items: center; gap: 10px; padding: 15px 20px; background: none; border: none; cursor: pointer; text-align: left; font-family: inherit; transition: background .15s; }
+  .about-toggle:hover { background: var(--bg); }
+  .about-toggle-icon { width: 16px; height: 16px; fill: var(--blue); flex-shrink: 0; }
+  .about-toggle-label { font-size: 0.88rem; font-weight: 700; color: var(--text); flex: 1; }
+  .about-toggle-chevron { width: 16px; height: 16px; flex-shrink: 0; color: var(--text-3); transition: transform .25s ease; }
+  .about-toggle[aria-expanded="true"] .about-toggle-chevron { transform: rotate(180deg); }
+  .about-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .28s ease; }
+  .about-body.open { grid-template-rows: 1fr; }
+  .about-body-inner { overflow: hidden; }
+  .about-body-inner-pad { padding: 0 20px 20px; border-top: 1px solid var(--border); padding-top: 16px; }
   .about-svg-wrap { width: 100%; overflow-x: auto; }
   .about-svg-wrap svg { width: 100%; height: auto; display: block; }
 
@@ -399,14 +407,18 @@
 
 </div><!-- /main-wrap -->
 
-<!-- ABOUT: SVG埋め込み -->
+<!-- ABOUT: SVG埋め込み（アコーディオン） -->
 <div class="about-wrap">
   <div class="about-card">
-    <h2>
-      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-      サイト全体の仕組みについて
-    </h2>
-    <div class="about-svg-wrap">
+    <button class="about-toggle" id="about-btn" aria-expanded="false" aria-controls="about-body" onclick="toggleAbout()">
+      <svg class="about-toggle-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      <span class="about-toggle-label">サイト全体の仕組みについて</span>
+      <svg class="about-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="about-body" id="about-body" role="region" aria-labelledby="about-btn">
+      <div class="about-body-inner">
+        <div class="about-body-inner-pad">
+          <div class="about-svg-wrap">
       <!-- ===== 構成図SVG ===== -->
       <svg viewBox="0 0 680 920" xmlns="http://www.w3.org/2000/svg" style="font-family:'Noto Sans JP',-apple-system,sans-serif;">
         <defs>
@@ -549,6 +561,9 @@
         <text x="340" y="880" text-anchor="middle" font-size="11" fill="#3b6d11">こだわりを感じるおしゃれなUI　／　参考サイトを見つけたら随時デザインに反映</text>
       </svg>
       <!-- ===== /構成図SVG ===== -->
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -566,6 +581,15 @@
 
 
 <script>
+// ── アコーディオン ──
+function toggleAbout() {
+  const btn  = document.getElementById('about-btn');
+  const body = document.getElementById('about-body');
+  const open = btn.getAttribute('aria-expanded') === 'true';
+  btn.setAttribute('aria-expanded', !open);
+  body.classList.toggle('open', !open);
+}
+
 // ── ナビのスムーズスクロール ──
 // 各カードへジャンプし、画面の上部付近に表示する
 // ヘッダー（60px）＋少し余裕（16px）分ずらす
