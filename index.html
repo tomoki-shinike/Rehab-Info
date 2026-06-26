@@ -739,13 +739,15 @@ window.addEventListener('scroll', () => {
   const canvas = document.getElementById('ripple-canvas');
   const ctx = canvas.getContext('2d');
   let ripples = [], trails = [], lastTrail = 0;
+  const isTouch = window.matchMedia('(hover: none)').matches;
+  let rafId = null;   // requestAnimationFrameのID（止めるために使う）
+  let active = false; // 描画ループが動いているか
 
   function resize(){
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
   }
   resize();
-  // 300msのdebounce：アドレスバー出し入れ程度の瞬間的なresizeは無視
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
@@ -753,14 +755,33 @@ window.addEventListener('scroll', () => {
   });
   window.addEventListener('orientationchange', () => { setTimeout(resize, 100); });
 
-  document.addEventListener('mousemove', e => {
-    const now = performance.now();
-    if (now - lastTrail > 65) {
-      trails.push({ x: e.clientX, y: e.clientY, max: 16, alpha: 0.38, born: now });
-      lastTrail = now;
-    }
-  });
+  // 描画ループを開始（すでに動いていれば何もしない）
+  function startLoop() {
+    if (active) return;
+    active = true;
+    rafId = requestAnimationFrame(draw);
+  }
 
+  // 描画ループを停止してcanvasをクリア
+  function stopLoop() {
+    active = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // PCのみ：マウス軌跡
+  if (!isTouch) {
+    document.addEventListener('mousemove', e => {
+      const now = performance.now();
+      if (now - lastTrail > 65) {
+        trails.push({ x: e.clientX, y: e.clientY, max: 16, alpha: 0.38, born: now });
+        lastTrail = now;
+        startLoop();
+      }
+    });
+  }
+
+  // タップ・クリック共通：波紋
   document.addEventListener('click', e => {
     const now = performance.now();
     [{ max: 90, alpha: 0.65, delay: 0 },
@@ -768,10 +789,13 @@ window.addEventListener('scroll', () => {
      { max: 34, alpha: 0.30, delay: 220 }].forEach(p =>
       ripples.push({ x: e.clientX, y: e.clientY, ...p, born: now })
     );
+    startLoop();
   });
 
   function draw(ts){
+    if (!active) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     trails = trails.filter(t => {
       const prog = (ts - t.born) / 600;
       if (prog >= 1) return false;
@@ -783,6 +807,7 @@ window.addEventListener('scroll', () => {
       ctx.stroke();
       return true;
     });
+
     ripples = ripples.filter(rp => {
       const age = ts - rp.born - rp.delay;
       if (age < 0) return true;
@@ -804,9 +829,17 @@ window.addEventListener('scroll', () => {
       }
       return true;
     });
-    requestAnimationFrame(draw);
+
+    // 描くものがなくなったらループを止める
+    if (trails.length === 0 && ripples.length === 0) {
+      stopLoop();
+    } else {
+      rafId = requestAnimationFrame(draw);
+    }
   }
-  requestAnimationFrame(draw);
+
+  // PCは最初からループ開始、スマホは何もしない（タップ時だけ起動）
+  if (!isTouch) startLoop();
 })();
 </script>
 </body>
